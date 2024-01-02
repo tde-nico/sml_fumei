@@ -1,6 +1,6 @@
 
 all:
-	@ py fumei.py
+#	@ py fumei.py
 
 run: all
 	@ clear

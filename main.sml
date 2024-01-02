@@ -1,2 +1,2 @@
 
-use "transpiled.sml";
+use "main_main.sml";
