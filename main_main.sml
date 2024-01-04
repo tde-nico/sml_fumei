@@ -73,18 +73,19 @@ fun evalI(E:(string * int) list, p:Program, k) =
 
 
 fun isSync(p:Program): bool = 
-    case p of
-        Skip => false
-      | Seq (q,m) => isSync(q)
-      | Assign (x, M) => false
-      | If (b, t, e) => false
-      | While (b, q) => false
-      | Crit p1 => false
-      | Sync => true;
+	case p of
+		Skip => false
+		| Seq (q,m) => isSync q
+		| Assign (x, M) => false
+		| If (b, t, e) => false
+		| While (b, q) => false
+		| Crit p1 => false
+		| Sync => true;
+
 
 fun removeSync(p:Program):Program = 
 	case p of
-		Seq (q,m) => Seq(removeSync(q), m)
+		Seq (q,m) => Seq(removeSync q, m)
 		| Sync => Skip;
 
 
@@ -95,8 +96,8 @@ fun evalT(E:(string * int) list, t: Thread): ((string * int) list) =
 				val (E1, p1_1) = callcc(fn k => evalI(E, p1, k))
 				val (E2, p2_1) = callcc(fn k => evalI(E1, p2, k))
 			in
-				if isSync(p1) andalso isSync(p2) then
-					evalT(E2, Th(removeSync(p1_1), removeSync(p2_1)))
+				if isSync p1 andalso isSync p2 then
+					evalT(E2, Th(removeSync p1_1, removeSync p2_1))
 				else
 					if p1_1 <> Skip orelse p2_1 <> Skip then
 						evalT(E2, Th(p1_1, p2_1))
