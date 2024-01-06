@@ -1,12 +1,9 @@
 open SMLofNJ.Cont;
 
 datatype Exp = Const of int | Var of string | Sum of Exp * Exp | Sub of Exp * Exp | Mul of Exp* Exp | Div of Exp * Exp;
-
 datatype Bool = True | False | And of Bool * Bool | Or of Bool * Bool | Not of Bool | Eq of Exp * Exp | Gt of Exp * Exp | Lt of Exp * Exp;
-
-datatype Program = Skip | Seq of Program * Program | Assign of string * Exp | If of Bool * Program * Program | While of Bool * Program | Crit of Program | Sync;
-
-datatype Thread = Th of Program * Program;
+datatype Program = Skip | Seq of Program * Program | Assign of string * Exp | If of Bool * Program * Program | While of Bool * Program | Sync | Crit of Program;
+datatype Thread = Null | Th of Program * Thread;
 
 exception NotFoundException;
 
@@ -71,36 +68,64 @@ fun evalI(E:(string * int) list, p:Program, k) =
 		| Crit q => throw k (evalP(E, q), Skip)
 		| Sync => throw k (E, p);
 
+fun checkEnd(t:Thread): bool = 
+	case t of
+		Null => true
+		| Th (p1, t1) => (p1 = Skip) andalso checkEnd t1;
 
-fun isSync(p:Program): bool = 
+
+fun checkSync(t:Thread): bool =
+	case t of
+		Null => true
+		| Th (p1, t1) => (
+			case p1 of
+				Skip => false
+				| Seq (q,m) => checkSync(Th(q, Null))
+				| Assign (x, M) => false
+				| If (b, t, e) => false
+				| While (b, q) => false
+				| Crit q => false
+				| Sync => true
+			) andalso checkSync t1;
+
+
+fun removeSyncP(p:Program):Program = 
 	case p of
-		Skip => false
-		| Seq (q,m) => isSync q
-		| Assign (x, M) => false
-		| If (b, t, e) => false
-		| While (b, q) => false
-		| Crit p1 => false
-		| Sync => true;
+		Sync => Skip
+		| Seq (p1,p2) => Seq(removeSyncP p1, p2);
 
 
-fun removeSync(p:Program):Program = 
-	case p of
-		Seq (q,m) => Seq(removeSync q, m)
-		| Sync => Skip;
+fun removeSync(t:Thread):Thread = 
+	case t of 
+		Null => Null
+		| Th (p1, t1) => Th(removeSyncP p1, removeSync t1)
+
+
+fun evalTOne(E:(string * int) list, t:Thread) = 
+	case t of 
+		Null => (E, Null)
+		| Th(p1, t1) => 
+			let
+				val (E1, p1_1) = callcc(fn k1 => evalI(E, p1, k1))
+				val (E2, t1_1) = evalTOne(E1, t1)
+			in
+				(E2, Th(p1_1, t1_1))
+			end;
 
 
 fun evalT(E:(string * int) list, t: Thread): ((string * int) list) =
-	case t of
-		Th (p1,p2) =>
+	case t of 
+		Null => E
+		| Th (p1, t1) => 
 			let
-				val (E1, p1_1) = callcc(fn k => evalI(E, p1, k))
-				val (E2, p2_1) = callcc(fn k => evalI(E1, p2, k))
+				val (E1, t1_1) = evalTOne(E, Th(p1, t1))
 			in
-				if isSync p1 andalso isSync p2 then
-					evalT(E2, Th(removeSync p1_1, removeSync p2_1))
+				if checkSync t1_1 then
+					evalT(E1, removeSync t1_1)
 				else
-					if p1_1 <> Skip orelse p2_1 <> Skip then
-						evalT(E2, Th(p1_1, p2_1))
+					if not(checkEnd t1_1) then
+						evalT(E1, t1_1)
 					else
-						E2
+						E1
 			end;
+
