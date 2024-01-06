@@ -131,5 +131,5 @@ fun evalT(E:(string * int) list, t: Thread): ((string * int) list) =
 
 
 val E = [];
-val prog = %s;
+val prog = Th(Seq(Seq(Assign("x", Const 2), If(Eq(Var "x", Const 2), If(Eq(Var "x", Const 3), Assign("x", Sum(Var "x", Const 1)), Assign("x", Sub(Var "x", Const 1))), Assign("x", Sub(Var "x", Const 2)))), Sync), Th(Seq(Seq(Assign("y", Sum(Const 5, Mul(Const 6, Const 5))), While(Gt(Var "y", Const 29), Assign("y", Sub(Var "y", Const 1)))), Sync), Th(Seq(Seq(Assign("z", Sum(Var "x", Const 1)), Sync), Crit(If(And(Not(Lt(Var "y", Sum(Var "z", Var "x"))), Or(Eq(Const 2, Const 3), True)), Assign("z", Sum(Var "z", Const 1)), Assign("z", Sub(Var "z", Const 1))))), Null)));
 val result = evalT(E, prog);

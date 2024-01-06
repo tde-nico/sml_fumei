@@ -1,0 +1,36 @@
+
+th
+x = (2)
+if ( (x) == (2) ) {
+	if ( (x) == (3) ) {
+		x = (x) + (1)
+	} else {
+		x = (x) - (1)
+	}
+} else {
+	x = (x) - (2)
+}
+sync
+
+
+th
+y = (5) + ((6) * (5))
+while ((y) > (29)) {
+	y = (y) - (1)
+}
+sync
+
+
+th
+z = (x) + (1)
+sync
+crit
+
+if ( (! ((y) < ((z) + (x))) ) and (((2) == (3)) or (True)) ) {
+	z = (z) + (1)
+} else {
+	z = (z) - (1)
+}
+
+endcrit
+
